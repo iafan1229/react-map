@@ -1,6 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import logo from './logo.svg';
 import './App.css';
+
+const positions = [
+	{
+		title: '카카오',
+		latlng: new kakao.maps.LatLng(33.450705, 126.570677),
+	},
+	{
+		title: '생태연못',
+		latlng: new kakao.maps.LatLng(33.450936, 126.569477),
+	},
+	{
+		title: '텃밭',
+		latlng: new kakao.maps.LatLng(33.450879, 126.56994),
+	},
+	{
+		title: '근린공원',
+		latlng: new kakao.maps.LatLng(33.451393, 126.570738),
+	},
+];
 
 function App() {
 	const container = useRef<HTMLDivElement | null>(null);
@@ -8,18 +26,13 @@ function App() {
 		null
 	);
 	const [reactMap, setReactMap] = useState<kakao.maps.Map | null>(null);
+	const [markerArray, setMarkerArray] = useState<kakao.maps.Marker[]>([]);
+
 	/**
 	 * 지도 클릭시 마커를 이동하고 위도, 경도를 표시한다.
 	 * @param mouseEvent : 이벤트
 	 * @param marker : 마커객체
 	 */
-	const handleMapClick = (mouseEvent: any, marker: kakao.maps.Marker) => {
-		const latlng = mouseEvent.latLng;
-		const newMessage = `클릭한 위치의 위도는 ${latlng.getLat()} 이고, 경도는 ${latlng.getLng()} 입니다`;
-		console.log(newMessage);
-
-		marker.setPosition(latlng);
-	};
 
 	//시작 : kakao map 글로벌객체를 state에 담는다.(나중에 쓰기편하게)
 	useEffect(() => {
@@ -41,20 +54,35 @@ function App() {
 
 		setReactMap(map);
 
-		const marker = new initialKakao.Marker({
-			position: map.getCenter(),
+		//복수의 마커들
+		for (let i = 0; i < positions.length; i++) {
+			// 마커를 생성합니다
+			const markers = new kakao.maps.Marker({
+				map: map, // 마커를 표시할 지도
+				position: positions[i].latlng, // 마커를 표시할 위치
+				title: positions[i].title, // 마커의 타이틀, 마커에 마우스를 올리면 타이틀이 표시됩니다
+			});
+			markers.setMap(map);
+		}
+
+		//클릭이벤트
+		initialKakao.event.addListener(map, 'click', (mouseEvent: any) => {
+			if (!initialKakao) return;
+
+			// const latlng = mouseEvent.latLng;
+			const marker = new initialKakao.Marker({
+				position: mouseEvent.latLng,
+			});
+
+			// 마커가 지도 위에 표시되도록 설정합니다
+			marker.setMap(map);
+
+			// // 생성된 마커를 배열에 추가합니다
+			setMarkerArray([...markerArray, marker]);
 		});
-		marker.setMap(map);
 
-		initialKakao.event.addListener(
-			map,
-			'click',
-			(mouseEvent: typeof kakao.maps.event) =>
-				handleMapClick(mouseEvent, marker)
-		);
-
-		return () =>
-			initialKakao.event.removeListener(map, 'click', handleMapClick);
+		// return () =>
+		// 	initialKakao.event.removeListener(map, 'click', handleMapClick);
 	}, [initialKakao, container]);
 
 	//컨트롤바
